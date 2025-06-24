@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+mlflow
+boto3
+joblib==1.4.2
+redis
+scikit-learn==1.0.2
+pydantic
+numpy==1.23.5
+xgboost==2.0.2
+statsmodels
+cloudpickle>=2.0.0

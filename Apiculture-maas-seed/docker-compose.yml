@@ -1,0 +1,45 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: api-redis
+    networks:
+      - maas-network
+
+  maas-seed:
+    build: .
+    container_name: api-maas-seed-service
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - FEAST_BASE_URL=http://feast-tunnel:6567
+      - MLFLOW_TRACKING_URI=http://3.239.37.210:5000
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+    ports:
+      - "8030:8000"
+    depends_on:
+      - redis
+    networks:
+      - maas-network
+
+  feast-tunnel:
+    image: amazon/aws-cli:2.15.59
+    container_name: api-feast-tunnel
+    entrypoint: [""]
+    environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+    command: >
+      sh -c "
+        curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl &&
+        install -m 0755 kubectl /usr/local/bin/kubectl &&
+        aws eks update-kubeconfig --name DE-platform --region us-east-1 &&
+        kubectl port-forward --address=0.0.0.0 svc/feast-python-server -n feast-python 6567:6567
+      "
+    depends_on:
+      - maas-seed
+    networks:
+      - maas-network
+
+networks:
+  maas-network:
+    driver: bridge
